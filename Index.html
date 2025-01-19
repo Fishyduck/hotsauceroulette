@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hot Sauce Roulette</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #1a1a1a;
+      color: white;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #roulette-container {
+      text-align: center;
+    }
+    h1 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+    #wheel {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      margin: 0 auto 20px;
+      border: 10px solid #ff6f61;
+      border-radius: 50%;
+      background-color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    #hot-sauce-image {
+      position: absolute;
+      width: 90%;
+      height: 90%;
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 1;
+    }
+    #hot-sauce-number {
+      position: absolute;
+      font-size: 48px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      z-index: 2;
+    }
+    button {
+      padding: 15px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      background-color: #ff6f61;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #e8574e;
+    }
+  </style>
+</head>
+<body>
+  <div id="roulette-container">
+    <h1>Hot Sauce Roulette</h1>
+    <div id="wheel">
+      <div id="hot-sauce-image"></div>
+      <div id="hot-sauce-number"></div>
+    </div>
+    <button onclick="spinRoulette()">Spin the Wheel</button>
+  </div>
+
+  <script>
+    const numbers = Array.from({ length: 30 }, (_, i) => i + 1);
+
+    // Assign weights
+    const specialNumbers = [4, 7, 9, 16, 26];
+    const weights = Array(30).fill(0);
+
+    // Assign 10% to special numbers
+    specialNumbers.forEach(num => {
+      weights[num - 1] = 10;
+    });
+
+    // Calculate remaining 50% and distribute evenly among non-special numbers
+    const remainingNumbers = numbers.filter(num => !specialNumbers.includes(num));
+    const remainingProbability = 50 / remainingNumbers.length;
+
+    remainingNumbers.forEach(num => {
+      weights[num - 1] = remainingProbability;
+    });
+
+    // Normalize weights
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+    const normalizedWeights = weights.map(w => w / totalWeight);
+
+    // Rolling animation duration
+    const rollDuration = 3000; // 3 seconds
+
+    // Spin the roulette
+    async function spinRoulette() {
+      const imageElement = document.getElementById('hot-sauce-image');
+      const numberElement = document.getElementById('hot-sauce-number');
+
+      // Reset the display
+      imageElement.style.backgroundImage = 'none';
+      numberElement.textContent = '';
+
+      // Start rolling animation
+      const startTime = Date.now();
+      const animationInterval = 100; // Change displayed number every 100ms
+      const rollingAnimation = setInterval(() => {
+        const randomIndex = Math.floor(Math.random() * numbers.length);
+        const randomNumber = numbers[randomIndex];
+        numberElement.textContent = `#${randomNumber}`;
+        imageElement.style.backgroundImage = `url('images/H${randomNumber}.png')`;
+      }, animationInterval);
+
+      // Wait for roll duration
+      await new Promise(resolve => setTimeout(resolve, rollDuration));
+
+      // Stop animation
+      clearInterval(rollingAnimation);
+
+      // Select final number with weighted probabilities
+      const finalNumber = weightedRandomChoice(numbers, normalizedWeights);
+
+      // Display final result
+      numberElement.textContent = `#${finalNumber}`;
+      imageElement.style.backgroundImage = `url('images/H${finalNumber}.png')`;
+    }
+
+    // Weighted random choice function
+    function weightedRandomChoice(items, weights) {
+      const cumulativeWeights = [];
+      for (let i = 0; i < weights.length; i++) {
+        cumulativeWeights[i] = weights[i] + (cumulativeWeights[i - 1] || 0);
+      }
+
+      const random = Math.random();
+      return items.find((_, i) => random < cumulativeWeights[i]);
+    }
+  </script>
+</body>
+</html>
